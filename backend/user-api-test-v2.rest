@@ -1,0 +1,20 @@
+@baseUrl = http://localhost:3001/api/v2
+
+### Read all users
+GET {{baseUrl}}/users
+
+### Create a new user
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "username": "Mark3",
+  "email": "saharad@example.com",
+  "password": "pass1234"
+}
+
+###delete user by ID
+DELETE {{baseUrl}}/users/6a9e6865f5f89abaf440e6b4
+
+###delete all data
+DELETE {{baseUrl}}/users
