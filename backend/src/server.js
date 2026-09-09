@@ -2,6 +2,7 @@ import express from "express";
 import { users } from "./fakeDB/fakeUsers.js";
 import { router as apiRoutes } from "./routes/index.js";
 import { connectDB } from "./config/db.js";
+import { connectSupabase } from "./config/supabase.js";
 
 const app = express();
 
@@ -176,6 +177,7 @@ app.get("/", (req, res) => {
 </html>`);
 });
 
+// middlewareหลัก
 app.use("/api", apiRoutes);
 
 // Centralized Error Handling Middleware
@@ -191,6 +193,8 @@ const PORT = 3001;
 async function start() {
 try {
     await connectDB();
+    await connectSupabase();
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Server is running at http://localhost:${PORT}`);

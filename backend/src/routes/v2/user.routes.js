@@ -27,7 +27,8 @@ router.post("/", async (req, res, next) => {
 
     const newUser = await User.create({ username, email, password });
 
-    const { password: _password, ...userWithoutPassword } = newUser.toObject();
+    const { password: _password, ...userWithoutPassword } = newUser.toObject();//
+    console.log(_password);
 
     return res.status(201).json(userWithoutPassword);
   } catch (err) {
@@ -36,6 +37,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // Create user with stack
+// ลองนำแนวคิดการเตรียม Array ของข้อมูลผ่าน for loop แล้วส่งเข้า User.insertMany() ไปลองร่างโค้ดดูก่อนครับ ติดตรงไหนเอามาแชร์ให้ช่วยดูทีละสเต็ปได้เลย
 // router.post("/", async (req, res, next) => {
 //   try {
 //     const { username, email, password } = req.body;
@@ -57,6 +59,30 @@ router.post("/", async (req, res, next) => {
 // Update users
 router.put("/:id", async (req, res, next) => {
   try {
+    
+    const { username, email, password } = req.body;
+    
+    if (!username || !email || !password) {
+      return res
+      .status(400)
+      .json({ error: "username, email and password are required" });
+    }
+    
+// 2. ใช้ findByIdAndUpdate แบบครบเครื่อง
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,                            // พารามิเตอร์ที่ 1: ID
+      { username, email, password },            // พารามิเตอร์ที่ 2: ข้อมูลใหม่
+      { new: true, runValidators: true }        // พารามิเตอร์ที่ 3: Options
+    );
+
+    // 3. เช็คเผื่อกรณีหา ID ไม่พบในระบบ
+    if (!updatedUser) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // 4. ส่งผลลัพธ์ข้อมูลใหม่กลับไปหา Client
+    return res.status(200).json(updatedUser);
+
   } catch (err) {
     next(err);
   }
