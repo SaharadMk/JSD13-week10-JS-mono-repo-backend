@@ -8,13 +8,14 @@ POST {{baseUrl}}/users
 Content-Type: application/json
 
 {
-  "username": "Mark4",
-  "email": "saharad5@example.com",
-  "password": "pass1234"
+  "username": "ADMINark1",
+  "email": "saharadADmin@example.com",
+  "password": "passAD321",
+  "role":"admin"
 }
 
 ###Update user by ID
-PUT {{baseUrl}}/users/6a9ec5af034e05693903dcc4
+PUT {{baseUrl}}/users/6aa25546711a574162ed7a97
 Content-Type: application/json
 
 {
@@ -29,3 +30,6 @@ DELETE {{baseUrl}}/users/6a9ec578034e05693903dcc3
 
 ###delete all data
 DELETE {{baseUrl}}/users
+
+
+

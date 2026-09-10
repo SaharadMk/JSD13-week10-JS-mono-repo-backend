@@ -1,5 +1,8 @@
 import { Router } from "express";
 import { User } from "../../models/user.model.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { authUser } from "../../middleware/authUser.js";
 
 export const router = Router();
 
@@ -19,15 +22,15 @@ router.get("/", async (req, res, next) => {
 // Create user
 router.post("/", async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, role } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const newUser = await User.create({ username, email, password });
+    const newUser = await User.create({ username, email, password, role });
 
-    const { password: _password, ...userWithoutPassword } = newUser.toObject();//
+    const { password: _password, ...userWithoutPassword } = newUser.toObject(); //
     console.log(_password);
 
     return res.status(201).json(userWithoutPassword);
@@ -59,20 +62,19 @@ router.post("/", async (req, res, next) => {
 // Update users
 router.put("/:id", async (req, res, next) => {
   try {
-    
     const { username, email, password } = req.body;
-    
+
     if (!username || !email || !password) {
       return res
-      .status(400)
-      .json({ error: "username, email and password are required" });
+        .status(400)
+        .json({ error: "username, email and password are required" });
     }
-    
-// 2. ใช้ findByIdAndUpdate แบบครบเครื่อง
+
+    // 2. ใช้ findByIdAndUpdate แบบครบเครื่อง
     const updatedUser = await User.findByIdAndUpdate(
-      req.params.id,                            // พารามิเตอร์ที่ 1: ID
-      { username, email, password },            // พารามิเตอร์ที่ 2: ข้อมูลใหม่
-      { new: true, runValidators: true }        // พารามิเตอร์ที่ 3: Options
+      req.params.id, // พารามิเตอร์ที่ 1: ID
+      { username, email, password }, // พารามิเตอร์ที่ 2: ข้อมูลใหม่
+      { new: true, runValidators: true }, // พารามิเตอร์ที่ 3: Options
     );
 
     // 3. เช็คเผื่อกรณีหา ID ไม่พบในระบบ
@@ -82,7 +84,6 @@ router.put("/:id", async (req, res, next) => {
 
     // 4. ส่งผลลัพธ์ข้อมูลใหม่กลับไปหา Client
     return res.status(200).json(updatedUser);
-
   } catch (err) {
     next(err);
   }
@@ -118,4 +119,91 @@ router.delete("/", async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+// Login user
+router.post("/login", async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email and password are required!" });
+    }
+    const user = await User.findOne({ email }).select("+password");
+    if (!user) {
+      return res
+        .status(400)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const isMatched = await bcrypt.compare(password, user.password);
+
+    if (!isMatched) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Incorrect pasword" });
+    }
+
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
+    const isProd = process.env.NODE_ENV === "production";
+
+    res.cookie("accessToken", token, {
+      httpOnly: true,
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      path: "/",
+      maxAge: 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Login successful!",
+      user: {
+        _id: user._id,
+        username: user.username,
+        role: user.role,
+        email: user.email,
+      },
+    });
+  } catch (error) {}
+});
+
+// Logout user
+router.post("/logout", async (req, res, next) => {
+  const isProd = process.env.NODE_ENV === "production";
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    path: "/",
+  });
+  return res.status(200).json({ success: true, message: "Logout successful!" });
+});
+
+// Check user's token
+router.get("/auth", authUser, async (req, res, next) => {
+  try {
+    const userId = req.user.user._id;
+    const user = User.findById(userId);
+    if (!user) {
+      return res
+        .status(401)
+        .json({ success: false, messgae: "User not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {}
 });

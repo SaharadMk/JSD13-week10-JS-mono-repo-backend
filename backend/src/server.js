@@ -3,11 +3,14 @@ import { users } from "./fakeDB/fakeUsers.js";
 import { router as apiRoutes } from "./routes/index.js";
 import { connectDB } from "./config/db.js";
 import { connectSupabase } from "./config/supabase.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 //แปลงข้อมูลให้เป็นJSONเพื่อให้ ส่งข้อมูลภายในexpress ถ้าไม่แปลงตัวmiddlewareจะสามารถอ่านได้
 app.use(express.json());
+app.use(cookieParser());
+
 
 // ไว้ลองดูว่าส่งตัววreq.body ว่าส่งเป็นอะไร ถ้าไม่แปลง.JSON จะส่งเป็น undefined
 app.post("/test", (req, res) => {
